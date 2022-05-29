@@ -24,13 +24,6 @@ int visit[MAXVER]; //정점 방문여부를 확인 할 int형 배열 visit
 
 int PV = 0;   //현재 추가될 정점 출력용 전역변수
 
-////DFS 깊이 우선탐색 용 스택 요소
-//#define MAXSTACK 20 // 스택 최대 크기 15
-//int stack[MAXSTACK]; //스택 배열
-//int top = -1; //스택 탑
-//int pop(); //스택 팝함수
-//int push(int key); //스택 푸시함수
-
 
 
 
@@ -261,7 +254,7 @@ void Free_Graph(Graph* g) {
 }
 
 
-//깊이우선탐색 함수 = 스택 활용하여 구현
+//깊이우선탐색 함수 = 스택 사용 구현 오류발생 해결 실패로 재귀식으로 구현
 int DFS(Graph* g, int v) { //v는 탐색을 시작할 정점
 	if (g == NULL) { // 그래프가 비어있을 때
 		printf("Initialize_Graph first.\n"); //안내메세지 출력 
@@ -288,7 +281,15 @@ int DFS(Graph* g, int v) { //v는 탐색을 시작할 정점
 		p = p->link; //p는 인접리스트 다음으로 이동
 	}
 
-	//visit[v] = 1; //정점 v 의 방문여부 1로 체크
+	
+}
+
+
+
+
+// dfs 스택으로 구현 오류발생으로 코드 자료만 저장
+
+//visit[v] = 1; //정점 v 의 방문여부 1로 체크
 	//push(v); //정점 v 스택에 푸시
 	//printf("DFS-> %d", v); // DFS 탐색 시작 정점과 함께 출력
 	////스택이 비어있을 때까지 반복 
@@ -309,9 +310,8 @@ int DFS(Graph* g, int v) { //v는 탐색을 시작할 정점
 	//	}// 인접정점이 없을 때 반복문 탈출
 	//	v = pop(); //넣어준 스택 요소 pop 해서 v에 대입 -> 다시 반복되면서 정점 v의 인접노드 p에 연결
 	//}
-}
 
-////스택 팝함수
+//스택 팝함수
 //int pop() {
 //	if (top == -1) {
 //		printf("stack is empty.\n");
