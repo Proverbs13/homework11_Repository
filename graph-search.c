@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #define MAXVER 10 //정점 최대 개수 10개 
 
-
 //인접리스트에서 사용할 노드 구조체
 typedef struct Node {
 	int vertex; // 그래프 노드가 가질 값
@@ -17,15 +16,21 @@ typedef struct Graph {
 	// 노드구조체를 가리킬 (연결되있음을 표시할) 헤드 포인터 배열
 	// 배열의 인덱스(0~9)를 표기상 정점으로 사용해 
 	// 이와 연결된 정점들이 연결리스트로 헤드포인터 배열에서 연결된다    
-	
+
 }Graph; //별칭 Graph
 
 int visit[MAXVER]; //정점 방문여부를 확인 할 int형 배열 visit
-
 int PV = 0;   //현재 추가될 정점 출력용 전역변수
 
+//bfs구현을 위한 큐 요소 homework 5 참고
+#define MAX_QUEUE_SIZE 15 //큐 최대 개수
+typedef struct {
+	int queue[MAX_QUEUE_SIZE]; // 구조체 내 int형 queue 배열 선언
+	int front, rear;
+}QueueType;  //QueueType 자료형 구조체 선언
 
-
+int enQueue(QueueType* cQ, int item); //큐의 원소를 삽입하는 함수
+int deQueue(QueueType* cQ);//큐의 원소를 삭제하는 함수 
 
 /* 함수 리스트 */
 int Initialize_Graph(Graph** g); // 그래프 초기화 함수
@@ -35,6 +40,8 @@ int vertex_locate(Graph* g, int u, int v); //간선 생성시 내부 연결리스트 정점 위
 int Print_Graph(Graph* g); //그래프 정보 출력 함수
 void Free_Graph(Graph* g); //그래프 동적 메모리 해제 함수
 int DFS(Graph* g, int v);   //깊이우선탐색 함수
+int BFS(Graph* g, int v);   //너비우선탐색 함수
+
 
 //메인함수
 int main()
@@ -42,19 +49,19 @@ int main()
 	char command;   //명령 입력받을 command
 	int u, v;        //간선을 연결할 정점 입력받을 u,v     
 	Graph* graph = NULL;       //그래프 구조체 포인터 G
-	int DFSstart; //dfs 시작할 정점
-	int BFSstart; //bfs 시작할 정점
+	int DFSstart= 0; //dfs 시작할 정점
+	int BFSstart= 0; //bfs 시작할 정점
 
 	printf("[----- [이찬] [2019038029] -----]\n");
 	do {
 		printf("\n");
 		printf("----------------------------------------------------------------\n");
-		printf("                   Graph Searches                           \n");
+		printf("                   Graph Searches                               \n");
 		printf("----------------------------------------------------------------\n");
-		printf(" Initialize Graph    = z                                       \n");
-		printf(" Insert Vertex       = v        Insert Edge           = e \n");
-		printf(" Depth First Search  = d        Breath First Search   = b \n");
-		printf(" Print Graph         = p        Quit = q              = q \n");
+		printf(" Initialize Graph    = z                                        \n");
+		printf(" Insert Vertex       = v        Insert Edge           = e       \n");
+		printf(" Depth First Search  = d        Breath First Search   = b       \n");
+		printf(" Print Graph         = p        Quit = q              = q       \n");
 		printf("----------------------------------------------------------------\n");
 		printf("Command = ");
 		scanf(" %c", &command);
@@ -69,7 +76,7 @@ int main()
 			Insert_Vertex(graph);
 			break;
 		case 'e': case 'E':
-			printf("Add Edge =  (ex: 3 4) ) ");
+			printf("Add Edge =  (ex: 3 4) ) "); 
 			scanf("%d %d", &u, &v);
 			Insert_Edge(graph, u, v);
 			break;
@@ -83,7 +90,10 @@ int main()
 			}
 			break;
 		case 'b': case 'B':
-			//너비 우선탐색함수 호출
+			printf("start vertex =  ");
+			scanf("%d", &BFSstart);
+			printf("\n BFS => ");
+			BFS(graph, BFSstart);
 			break;
 		case 'p': case 'P':
 			Print_Graph(graph);
@@ -111,7 +121,6 @@ int Initialize_Graph(Graph** g) { //graph자체의 주소값 받아옴, 함수에서 *g=graph
 	for (int i = 0; i < MAXVER; i++) {
 		visit[i] = 0;  //정점 방문여부 0으로 초기화
 	}
-
 	PV = 0; //현재 추가될 정점표기용 PV을 0으로 설정
 	return 0;
 }
@@ -166,8 +175,8 @@ int Insert_Edge(Graph* g, int u, int v) {
 	/* 아래의 연결리스트 추가부분에서 이미 u->v, v->u 연결리스트를 둘다 만들어버리므로
 		u-v,v-u간선 존재유무의 확인절차는 둘 중 하나만 체크해도 확인 가능 하다 */
 
-		//무방향 그래프이므로 양쪽을 모두 연결해 줘야 함
-		//u - v 연결
+	//무방향 그래프이므로 양쪽을 모두 연결해 줘야 함
+	//u - v 연결
 	vertex_locate(g, u, v); //헤드구조체배열의 인덱스 u정점에 값 v인 정점 추가
 	//v - u  연결
 	vertex_locate(g, v, u); //인수를 반대로 돌려 호출함
@@ -178,7 +187,7 @@ int Insert_Edge(Graph* g, int u, int v) {
 //간선 생성시 내부 연결리스트 정점 위치 설정 함수 (헤드구조체배열의 인덱스 u정점에 값 v인 정점 추가)
 int vertex_locate(Graph* g, int u, int v) {
 	//DFS, BFS 탐색시 여러 Edge가 있을 경우 Vertex의 번호가 작은 순으로 탐색하기위해서 애초에
-	//간선 추가시 번호가 작은 정점이 큰정점 앞으로 들어가게 연결리스트 구현 (homework6-singly-linked-list참조)
+	//간선 추가시 번호가 작은 정점이 큰 정점 앞으로 들어가게 연결리스트 구현 (homework6-singly-linked-list참조)
 
 	node* gn = (node*)malloc(sizeof(node)); // 연결할 정점 노드 포인터 동적할당
 	gn->vertex = v; //생성한 노드 값 = 추가한 정점 v
@@ -211,8 +220,6 @@ int vertex_locate(Graph* g, int u, int v) {
 	//추가할 노드의 정점이 원래있던 모든 노드들의 정점보다 클 때 마지막에 넣어줌
 	lastN->link = gn; //원래리스트의 마지막 연결을 gn으로 해줌
 }
-
-
 
 //그래프 정보 출력 함수
 int Print_Graph(Graph* g) {
@@ -253,8 +260,7 @@ void Free_Graph(Graph* g) {
 	return; //함수종료
 }
 
-
-//깊이우선탐색 함수 = 스택 사용 구현 오류발생 해결 실패로 재귀식으로 구현
+//깊이우선탐색 함수 = 스택 사용 구현 오류 해결이 안돼서 재귀식으로 구현
 int DFS(Graph* g, int v) { //v는 탐색을 시작할 정점
 	if (g == NULL) { // 그래프가 비어있을 때
 		printf("Initialize_Graph first.\n"); //안내메세지 출력 
@@ -269,26 +275,82 @@ int DFS(Graph* g, int v) { //v는 탐색을 시작할 정점
 		printf("\nyour vertex is not in the graph.\n"); //안내메세지 출력 
 		return 0;  //함수종료
 	}
-
 	node* p = NULL;    // 이동하며 탐색할 노드 구조체포인터 p
-	visit[v] = 1;      // 정점 v 의 방문여부 1로 체크
 	printf("%d  ", v);  // 현재 노드 정점 출력
-	p = g->headlist[v];// p노드 정점에 v의 인접정점 노드 (연결된 리스트 첫 정점) 받아옴
-	
-	while(p!=NULL){// 받아온 p가 NULL일때까지 반복
+	visit[v] = 1;      // 정점 v 의 방문여부 1로 체크
+	p = g->headlist[v];// p노드에 v의 인접정점 노드 (연결된 리스트 첫 정점) 받아옴
+
+	while (p != NULL) {// 받아온 p가 NULL일때까지 반복
 		if (0 == visit[p->vertex]) //현재 위치 p노드의 정점의 방문여부가 0 = 방문하지 않았을 때
-			DFS(g, p->vertex); // 그 위치에서 DFS 다시 호출
+			DFS(g, p->vertex); // 그 위치에서 DFS 다시 호출 - 재귀
 		p = p->link; //p는 인접리스트 다음으로 이동
 	}
+}
 
-	
+//너비우선탐색 함수 => 큐사용하여 구현
+int BFS(Graph* g, int v) {
+	if (g == NULL) { // 그래프가 비어있을 때
+		printf("Initialize_Graph first.\n"); //안내메세지 출력 
+		return 0;  //함수종료
+	}
+	if (v<0 || v>MAXVER) { // 정점이 입력해야할 범위를 벗어날 때
+		printf("\nyour vertex is not in proper range.\n"); //안내메세지 출력 
+		return 0;  //함수종료
+	}
+	//둘중 하나라도 그래프에 없는 정점을 입력했을 때
+	if (v >= g->N) {  // ex: 정점이 3까지 추가됬으면 정점개수는 4 이므로 >= 사용
+		printf("\nyour vertex is not in the graph.\n"); //안내메세지 출력 
+		return 0;  //함수종료
+	}
+	QueueType q;// 구조체 큐 생성
+	node* p = NULL; // 이동하며 탐색할 노드 구조체포인터 p
+	q.front= 0; // 
+	q.rear = 0; // 큐 초기화
+
+	printf("%d  ", v); // 현재 노드 정점 출력
+	enQueue(&q, v);	  // 현재 노드 정점 큐에 넣어줌
+	visit[v] = 1;             // 정점 v 의 방문여부 1로 체크
+	//큐가 비어있지 않은 동안 반복
+	while (q.front != q.rear) {
+		v = deQueue(&q);  // 큐에서 먼저들어간 요소 뽑아옴
+		p = g->headlist[v];  // p노드에 v의 인접정점 노드 (연결된 리스트 첫 정점) 받아옴
+		
+		while (p != NULL) {// 받아온 p가 NULL일때까지 반복
+			//노드 p의 정점이 방문하지 않은 정점이라면
+			if (0 == visit[p->vertex]) { 
+				printf("%d  ", p->vertex); // 현재 노드p 정점 출력
+				enQueue(&q, p->vertex);	  // 현재 노드p 정점 큐에 넣어줌
+				visit[p->vertex] = 1;             // 방문여부 1로 체크
+			}
+			p = p->link; //p는 인접리스트 다음으로 이동
+		}
+	}
+	for (int i = 0; i < MAXVER; i++) {
+		visit[i] = 0;  //정점 방문여부 0으로 초기화
+	}
+	return 0; // 함수종료
+}
+
+//큐의 원소를 삽입하는 함수
+int enQueue(QueueType* cQ, int item) {
+	if (((cQ->rear) + 1) % MAX_QUEUE_SIZE == cQ->front) { //큐가 가득찼다면
+		return 0; //함수종료
+	}
+	cQ->rear = ((cQ->rear) + 1) % MAX_QUEUE_SIZE; //modulo 연산을 이용해 큐의 rear 1칸 이동시킴
+	cQ->queue[cQ->rear] = item; //큐의 공간이 남아있을 때 이동한 rear 부분에 입력된 값 초기화
+	return 0;//함수종료
+}
+
+//큐의 원소를 삭제하는 함수 
+int  deQueue(QueueType* cQ) {
+	if (cQ->front == cQ->rear) //큐가 비어있다면
+		return 0;//함수종료
+	cQ->front = ((cQ->front) + 1) % MAX_QUEUE_SIZE; //큐가 비어있지 않다면 front 1칸 증가(이동)
+	return cQ->queue[cQ->front]; // front 값 반환하며 함수종료
 }
 
 
-
-
 // dfs 스택으로 구현 오류발생으로 코드 자료만 저장
-
 //visit[v] = 1; //정점 v 의 방문여부 1로 체크
 	//push(v); //정점 v 스택에 푸시
 	//printf("DFS-> %d", v); // DFS 탐색 시작 정점과 함께 출력
